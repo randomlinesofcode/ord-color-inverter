@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invert Colors - Inscriptions</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas { 
+            border: 2px solid #ddd; 
+            background: white;
+            max-width: 400px;
+            max-height: 400px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input, button {
+            font-size: 18px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        input {
+            width: 220px;
+            border: 2px solid #ccc;
+        }
+
+        button {
+            background-color: #FFC107;
+            color: black;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 220px;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button:hover:enabled {
+            background-color: #E0A800;
+        }
+
+        .disclaimer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            max-width: 600px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="canvas" width="300" height="300"></canvas>
+        </div>
+        <div class="controls">
+            <label for="inscriptionId">Inscription ID:</label>
+            <input type="text" id="inscriptionId" placeholder="Enter Inscription ID">
+            <button id="loadImage">Load Image</button>
+            <button id="invert" disabled>Invert Colors</button>
+            <button id="download" disabled>Download Image</button>
+        </div>
+    </div>
+
+    <p class="disclaimer">
+        This tool allows you to retrieve and modify images from Inscriptions's public mirror.  
+        We do not store, distribute, or claim ownership of any images.  
+        Use this tool at your own discretion.
+    </p>
+
+    <script>
+        const loadImageButton = document.getElementById('loadImage');
+        const inscriptionIdInput = document.getElementById('inscriptionId');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const invertButton = document.getElementById('invert');
+        const downloadButton = document.getElementById('download');
+        let image = new Image();
+        let imageFormat = 'image/png';  // Default format, in case it's not detected
+        let originalBlob = null;  // To store the original image Blob
+
+        // Regex validation based on Ordinals documentation
+        const inscriptionRegex = /^[a-f0-9]{64}i[0-9]+$/;
+
+        // Default placeholder image
+        const defaultImageUrl = 'https://via.placeholder.com/300x300?text=Sample+Image';
+        image.src = defaultImageUrl;
+
+        image.onload = function() {
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        };
+
+        loadImageButton.addEventListener('click', async () => {
+            const inscriptionId = inscriptionIdInput.value.trim();
+
+            // Validate input
+            if (!inscriptionId) {
+                alert("Please enter an Inscription ID.");
+                return;
+            }
+
+            if (!inscriptionRegex.test(inscriptionId)) {
+                alert("Invalid Inscription ID format. It must be a 64-character hexadecimal transaction ID followed by 'i' and a non-negative integer.");
+                return;
+            }
+
+            const imageUrl = `https://ord-mirror.magiceden.dev/content/${inscriptionId}`;
+
+            try {
+                const response = await fetch(imageUrl);
+                if (!response.ok) throw new Error("Unable to load image.");
+
+                originalBlob = await response.blob();
+                imageFormat = originalBlob.type;  // Get the format of the original image (e.g., 'image/png', 'image/jpeg')
+
+                image.src = URL.createObjectURL(originalBlob);
+                image.crossOrigin = "anonymous";
+
+                image.onload = function() {
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    ctx.drawImage(image, 0, 0);
+                    invertButton.disabled = false;  // Enable "Invert Colors"
+                    downloadButton.disabled = false; // Enable "Download"
+                };
+            } catch (error) {
+                alert("Error loading the image. Check the Inscription ID.");
+            }
+        });
+
+        invertButton.addEventListener('click', () => {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(originalBlob);  // Use the original image Blob directly
+            link.download = `image.${imageFormat.split('/')[1]}`;  // Save in the original format (e.g., image.png or image.jpg)
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+    </script>
+
+</body>
+</html>
