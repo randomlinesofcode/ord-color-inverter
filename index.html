@@ -187,9 +187,7 @@
             }
 
             const proxyUrl = "https://ord-proxy.ordinalsdir.workers.dev/?id=";
-            //const imageUrl = proxyUrl + inscriptionId;
-
-            const imageUrl = `https://ord-mirror.magiceden.dev/content/${inscriptionId}`;
+            const imageUrl = proxyUrl + inscriptionId;
 
             try {
                 const response = await fetch(imageUrl);
