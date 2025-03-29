@@ -148,6 +148,8 @@
                 return;
             }
 
+            //const imageUrl = `https://ord-mirror.magiceden.dev/content/${inscriptionId}`;
+
             const proxyUrl = "https://ord-proxy.ordinalsdir.workers.dev/?id=";
             const imageUrl = proxyUrl + inscriptionId;
 
@@ -159,7 +161,7 @@
                 imageFormat = originalBlob.type;  // Get the format of the original image (e.g., 'image/png', 'image/jpeg')
 
                 image.src = URL.createObjectURL(originalBlob);
-                //image.crossOrigin = "anonymous";
+                image.crossOrigin = "anonymous";
 
                 image.onload = function() {
                     canvas.width = image.width;
@@ -187,12 +189,16 @@
         });
 
         downloadButton.addEventListener('click', () => {
+            // Get the data URL of the canvas with the inverted colors
+            const invertedDataUrl = canvas.toDataURL(imageFormat);  // Use the correct image format, e.g., 'image/png'
+
+            // Create a link to download the inverted image
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(originalBlob);  // Use the original image Blob directly
-            link.download = `image.${imageFormat.split('/')[1]}`;  // Save in the original format (e.g., image.png or image.jpg)
+            link.href = invertedDataUrl;  // Use the data URL of the canvas
+            link.download = `inverted_image.${imageFormat.split('/')[1]}`;  // Download with the same format as the original
             link.click();
-            URL.revokeObjectURL(link.href);
         });
+
     </script>
 
 </body>
