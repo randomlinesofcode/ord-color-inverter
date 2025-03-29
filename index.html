@@ -148,10 +148,12 @@
                 return;
             }
 
+            const proxyUrl = "https://corsproxy.io/?";  // Most reliable free proxy
             const imageUrl = `https://ord-mirror.magiceden.dev/content/${inscriptionId}`;
+            const finalUrl = proxyUrl + encodeURIComponent(imageUrl);
 
             try {
-                const response = await fetch(imageUrl);
+                const response = await fetch(finalUrl);
                 if (!response.ok) throw new Error("Unable to load image.");
 
                 originalBlob = await response.blob();
